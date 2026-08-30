@@ -1,0 +1,122 @@
+import { McpClient, McpError } from './mcp-client';
+
+/** Limits enforced by the ideashell MCP tools. */
+export const TITLE_MAX = 30;
+export const SUMMARY_MAX = 500;
+export const TAG_MAX = 32;
+export const FOLDER_NAME_MAX = 50;
+export const MOVE_NOTES_MAX = 50;
+
+export interface CreateNoteInput {
+	title: string;
+	content: string;
+	summary?: string;
+	tag?: string;
+}
+
+export interface UpdateNoteInput {
+	title?: string;
+	content?: string;
+	summary?: string;
+	tags?: string[];
+}
+
+export interface CreatedNote {
+	note_id: string;
+	url?: string;
+}
+
+export interface FolderInfo {
+	folder_id: string;
+	name: string;
+}
+
+/** Typed wrappers around the ideashell MCP tools used by the plugin. */
+export class IdeashellApi {
+	constructor(private client: () => McpClient) {}
+
+	async createNote(input: CreateNoteInput): Promise<CreatedNote> {
+		const text = await this.client().callTool('note_create', {
+			title: input.title,
+			content: input.content,
+			...(input.summary ? { summary: input.summary } : {}),
+			...(input.tag ? { tag: input.tag } : {}),
+		});
+		const parsed = parseJson<CreatedNote>(text);
+		if (!parsed?.note_id) throw new McpError(`note_create returned no note_id: ${text.slice(0, 200)}`);
+		return parsed;
+	}
+
+	async updateNote(noteId: string, input: UpdateNoteInput): Promise<void> {
+		await this.client().callTool('note_update', { note_id: noteId, ...input });
+	}
+
+	async listFolders(): Promise<FolderInfo[]> {
+		const text = await this.client().callTool('folder_list', {});
+		// Lines look like: "- 📚 Reading #tag (pinned) [folder_id: 123]"
+		const folders: FolderInfo[] = [];
+		const re = /^- (.*?) \[folder_id: ([^\]]+)\]\s*$/;
+		for (const line of text.split('\n')) {
+			const m = re.exec(line);
+			if (!m) continue;
+			let name = m[1] ?? '';
+			// strip trailing flags and tags appended by the server formatter
+			name = name.replace(/\s\((pinned|archived)(, (pinned|archived))?\)$/, '');
+			name = name.replace(/(\s#[^\s#]+)+$/, '');
+			folders.push({ folder_id: (m[2] ?? '').trim(), name: name.trim() });
+		}
+		return folders;
+	}
+
+	async createFolder(name: string): Promise<FolderInfo> {
+		const text = await this.client().callTool('folder_create', { name });
+		const parsed = parseJson<{ folder_id: string; name: string }>(text);
+		if (!parsed?.folder_id) throw new McpError(`folder_create returned no folder_id: ${text.slice(0, 200)}`);
+		return { folder_id: parsed.folder_id, name: parsed.name ?? name };
+	}
+
+	async moveNotes(noteIds: string[], folderId: string): Promise<void> {
+		for (let i = 0; i < noteIds.length; i += MOVE_NOTES_MAX) {
+			await this.client().callTool('note_move', {
+				note_ids: noteIds.slice(i, i + MOVE_NOTES_MAX),
+				folder_id: folderId,
+			});
+		}
+	}
+}
+
+function parseJson<T>(text: string): T | null {
+	try {
+		return JSON.parse(text) as T;
+	} catch {
+		return null;
+	}
+}
+
+/**
+ * Case-insensitive folder lookup cache. The server strips the emoji into its own field,
+ * so names compare on the plain text only.
+ */
+export class FolderResolver {
+	private cache: Map<string, string> | null = null;
+	constructor(private api: IdeashellApi) {}
+
+	invalidate(): void {
+		this.cache = null;
+	}
+
+	async resolve(name: string): Promise<string> {
+		const key = name.toLowerCase();
+		if (!this.cache) {
+			this.cache = new Map();
+			for (const f of await this.api.listFolders()) {
+				if (!this.cache.has(f.name.toLowerCase())) this.cache.set(f.name.toLowerCase(), f.folder_id);
+			}
+		}
+		const hit = this.cache.get(key);
+		if (hit) return hit;
+		const created = await this.api.createFolder(name);
+		this.cache.set(key, created.folder_id);
+		return created.folder_id;
+	}
+}
