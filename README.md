@@ -11,7 +11,7 @@ One command sends the current note; edit it later and send again to update the s
 - **Send selection as a new note** — select text, right-click → "Send selection to ideashell". Good for quick memos.
 - **Sync a folder / a selection** — right-click a folder in the file explorer → "Sync folder to ideashell"; select several files (Cmd/Ctrl-click) and right-click → "Sync N notes to ideashell".
 - **Sync all** — sends every note marked with `ideashell: true` in its frontmatter, plus everything under the folders you list in settings.
-- **Folder mapping** (on by default) — a note in `Reading/2026/` lands in an ideashell folder named `Reading/2026`. ideashell folders are flat, so the Obsidian path becomes the folder name.
+- **Folder mapping** (on by default) — a note in `Reading/2026/` lands in an ideashell folder named `Reading/2026`. ideashell folders are flat, so the Obsidian path becomes the folder name. Moving or renaming the folder in Obsidian moves the note into the matching ideashell folder on the next sync (creating it if needed); the old ideashell folder is left in place.
 - **Tags** — frontmatter `tags` and inline `#tags` become ideashell tags. An `obsidian` tag is added so you can filter these notes in the app (configurable).
 - **Images** — local images embedded as `![[photo.png]]` (PNG/JPEG/GIF/WebP, up to 9 per note, 10MB each) are uploaded and attached to the note; images added later are attached on the next sync.
 - **Optional auto re-sync** — off by default. When on, a note that was synced before is re-sent a few seconds after you stop editing. New notes are never sent without you asking.
@@ -34,6 +34,7 @@ ideashell_hash: "3f2a9c1b"      # content hash — unchanged notes are skipped
 ideashell_synced: 2026-08-30T08:12:00.000Z
 ideashell_url: https://…        # link to the note in ideashell, when available
 ideashell_images: [img/a.png]   # vault images already attached, so they are not re-sent
+ideashell_folder: Reading/2026  # ideashell folder the note was last placed in
 ```
 
 Remove `ideashell_id` if you want the next sync to create a fresh note.

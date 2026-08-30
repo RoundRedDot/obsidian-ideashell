@@ -1,6 +1,7 @@
 import { App, Notice, TFile, arrayBufferToBase64 } from 'obsidian';
 import { FolderResolver, IdeashellApi, IMAGES_MAX, IMAGE_MAX_BYTES, NoteImage } from './ideashell-api';
 import {
+	FM_FOLDER,
 	FM_HASH,
 	FM_ID,
 	FM_IMAGES,
@@ -60,15 +61,18 @@ export class SyncService {
 				: [],
 		);
 		const pendingImages = this.embeddedImages(file, attachedBefore);
+		const folderName = s.mapFolders ? folderNameForPath(file.parent?.path ?? '') : null;
+		const folderBefore = (meta?.frontmatter?.[FM_FOLDER] as string | undefined) ?? null;
+		const folderChanged = existingId ? folderName !== folderBefore : false;
 
-		// Text unchanged and no new images → nothing to send. (Images are not part of the text hash.)
-		if (existingId && existingHash === note.hash && pendingImages.length === 0 && !opts.force) {
+		// Text unchanged, no new images, same folder → nothing to send.
+		// (Images and folder are not part of the text hash, so they are checked separately.)
+		if (existingId && existingHash === note.hash && pendingImages.length === 0 && !folderChanged && !opts.force) {
 			if (!opts.silent) new Notice(`ideashell: "${file.basename}" is already up to date`);
 			return 'unchanged';
 		}
 
 		try {
-			const folderName = s.mapFolders ? folderNameForPath(file.parent?.path ?? '') : null;
 			const folderId = folderName ? await this.folders.resolve(folderName) : undefined;
 
 			const { images, paths, skipped } = await this.readImages(pendingImages, attachedBefore.size);
@@ -76,9 +80,15 @@ export class SyncService {
 			let noteId = existingId;
 			let url: string | undefined;
 			if (noteId) {
-				await this.api.updateNote(noteId, { title: note.title, content: note.content, tags: note.tags, images });
+				// Only send text when it changed; a folder-only or image-only change skips note_update.
+				if (existingHash !== note.hash || images.length > 0) {
+					await this.api.updateNote(noteId, { title: note.title, content: note.content, tags: note.tags, images });
+				}
 				// keep the ideashell folder in step with where the file lives now
-				if (folderId) await this.api.moveNotes([noteId], folderId);
+				if (folderChanged) {
+					if (folderId) await this.api.moveNotes([noteId], folderId);
+					else await this.api.removeFromFolder([noteId]);
+				}
 			} else {
 				const created = await this.api.createNote({
 					title: note.title,
@@ -101,6 +111,8 @@ export class SyncService {
 				fm[FM_SYNCED] = new Date().toISOString();
 				if (url) fm[FM_URL] = url;
 				if (attachedNow.length > 0) fm[FM_IMAGES] = attachedNow;
+				if (folderName) fm[FM_FOLDER] = folderName;
+				else delete fm[FM_FOLDER];
 			});
 
 			const outcome: SyncOutcome = existingId ? 'updated' : 'created';

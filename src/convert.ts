@@ -21,6 +21,8 @@ export const FM_URL = 'ideashell_url';
 export const FM_MARK = 'ideashell';
 /** Vault paths of images already attached to the ideashell note. */
 export const FM_IMAGES = 'ideashell_images';
+/** ideashell folder name the note was last placed in (null/absent = unfiled). */
+export const FM_FOLDER = 'ideashell_folder';
 
 /** Turn a vault note into the fields ideashell's note_create / note_update accept. */
 export function convertNote(file: TFile, raw: string, meta: CachedMetadata | null, opts: ConvertOptions): ConvertedNote {

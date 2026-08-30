@@ -101,6 +101,15 @@ export class IdeashellApi {
 		return { folder_id: parsed.folder_id, name: parsed.name ?? name };
 	}
 
+	async removeFromFolder(noteIds: string[]): Promise<void> {
+		for (let i = 0; i < noteIds.length; i += MOVE_NOTES_MAX) {
+			await this.client().callTool('note_move', {
+				note_ids: noteIds.slice(i, i + MOVE_NOTES_MAX),
+				remove_from_folder: true,
+			});
+		}
+	}
+
 	async moveNotes(noteIds: string[], folderId: string): Promise<void> {
 		for (let i = 0; i < noteIds.length; i += MOVE_NOTES_MAX) {
 			await this.client().callTool('note_move', {
