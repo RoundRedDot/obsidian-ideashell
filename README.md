@@ -30,7 +30,7 @@ Sync is **one-way**: Obsidian → ideashell. Edits made in the ideashell app do 
 ## Setup
 
 1. Install the plugin — Community plugins → search **ideashell**, or add this repository in [BRAT](https://github.com/TfTHacker/obsidian42-brat).
-2. In ideashell (web or app) open **Settings → MCP / connections** and copy your **access key**.
+2. In ideashell (web or app) open **Settings → MCP** and copy your **API Key** (the MCP access key — the same one you use for Claude / Cursor).
 3. Obsidian → Settings → **ideashell**: choose your region (China / Global), paste the key, click **Test**.
 
 ## Usage
@@ -78,7 +78,7 @@ ideashell_images: [ideashell-test/img/red.png]      # images already attached (n
 | Setting | Default | Meaning |
 |---|---|---|
 | Region / Custom endpoint | China | Which ideashell server hosts your account. |
-| Access key | — | Your ideashell MCP access key. |
+| API Key | — | Your ideashell API Key (MCP access key). |
 | Source tag | `obsidian` | Tag added to every synced note; empty to disable. |
 | Map folders | on | Put notes into an ideashell folder named after the Obsidian folder path. |
 | Folders to sync | — | Vault folders included by *Sync all*. |
@@ -90,10 +90,10 @@ ideashell_images: [ideashell-test/img/red.png]      # images already attached (n
 
 This plugin makes network requests **only** to the ideashell MCP endpoint you select in settings
 (`https://api.ideashell.cn/ideashell/mcp` for China, `https://api.ideashell.com/ideashell/mcp` for Global, or a custom URL).
-It sends the title, body, tags, folder name and embedded images of the notes **you choose to sync**, authenticated with your access key.
+It sends the title, body, tags, folder name and embedded images of the notes **you choose to sync**, authenticated with your API Key.
 Nothing else in your vault is read or transmitted. There is no telemetry.
 
-An ideashell account is required. The access key grants the same permissions as your other MCP clients (Claude, Cursor, …); reset it in ideashell if it leaks.
+An ideashell account is required. The API Key grants the same permissions as your other MCP clients (Claude, Cursor, …); reset it in ideashell if it leaks.
 
 ## Limitations
 

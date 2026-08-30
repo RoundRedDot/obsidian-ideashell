@@ -82,8 +82,8 @@ export class IdeashellSettingTab extends PluginSettingTab {
 		}
 
 		new Setting(containerEl)
-			.setName('Access key')
-			.setDesc('Your ideashell MCP access key. Find it in ideashell → Settings → MCP / connections.')
+			.setName('API Key')
+			.setDesc('Your ideashell API Key (MCP access key). Find it in ideashell → Settings → MCP.')
 			.addText((t) => {
 				t.inputEl.type = 'password';
 				t.inputEl.style.width = '100%';
@@ -96,7 +96,7 @@ export class IdeashellSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName('Test connection')
-			.setDesc('Verify the endpoint and access key.')
+			.setDesc('Verify the endpoint and API Key.')
 			.addButton((b) =>
 				b.setButtonText('Test').onClick(async () => {
 					b.setDisabled(true);

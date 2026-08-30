@@ -28,7 +28,7 @@
 ## 安装与设置
 
 1. 安装插件：第三方插件 → 搜索 **ideashell**；或用 [BRAT](https://github.com/TfTHacker/obsidian42-brat) 添加本仓库地址。
-2. 打开闪念贝壳（网页或 App）→ **设置 → MCP / 连接**，复制你的**访问秘钥**。
+2. 打开闪念贝壳（网页或 App）→ **设置 → MCP**，复制你的 **API Key**（即 MCP 访问秘钥，和接 Claude / Cursor 用的是同一个）。
 3. Obsidian → 设置 → **ideashell**：选择区域（国内 / 海外），粘贴秘钥，点 **Test** 确认连接正常。
 
 ## 使用方法
@@ -76,7 +76,7 @@ ideashell_images: [ideashell-test/img/red.png]      # 已经挂上的图片（�
 | 设置 | 默认 | 说明 |
 |---|---|---|
 | Region / Custom endpoint | 国内 | 你的账号所在的服务器。 |
-| Access key | — | 闪念贝壳 MCP 访问秘钥。 |
+| API Key | — | 闪念贝壳 API Key（MCP 访问秘钥）。 |
 | Source tag | `obsidian` | 每条同步笔记附加的标签，留空则不加。 |
 | Map folders | 开 | 按 Obsidian 文件夹路径放进同名文件夹。 |
 | Folders to sync | — | *Sync all* 时包含的 vault 文件夹。 |
@@ -88,10 +88,10 @@ ideashell_images: [ideashell-test/img/red.png]      # 已经挂上的图片（�
 
 本插件**只**向你在设置里选择的闪念贝壳 MCP 地址发起网络请求
 （国内 `https://api.ideashell.cn/ideashell/mcp`，海外 `https://api.ideashell.com/ideashell/mcp`，或自定义地址）。
-发送的是**你主动选择同步的那些笔记**的标题、正文、标签、文件夹名和内嵌图片，用你的访问秘钥鉴权。
+发送的是**你主动选择同步的那些笔记**的标题、正文、标签、文件夹名和内嵌图片，用你的 API Key 鉴权。
 vault 里的其它内容不会被读取或上传，没有任何遥测。
 
-需要闪念贝壳账号。访问秘钥的权限与你其它 MCP 客户端（Claude、Cursor 等）相同；如果泄露，去闪念贝壳里重置。
+需要闪念贝壳账号。API Key 的权限与你其它 MCP 客户端（Claude、Cursor 等）相同；如果泄露，去闪念贝壳里重置。
 
 ## 限制
 
