@@ -1,0 +1,31 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "*"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - run: npm ci
+      - run: npm run build
+      - name: Check manifest version matches tag
+        run: |
+          tag="${GITHUB_REF#refs/tags/}"
+          v=$(node -p "require('./manifest.json').version")
+          [ "$tag" = "$v" ] || { echo "tag $tag != manifest $v"; exit 1; }
+      - name: Create release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          tag="${GITHUB_REF#refs/tags/}"
+          gh release create "$tag" --title "$tag" --notes "See README for setup and usage." main.js manifest.json styles.css
