@@ -9,6 +9,7 @@ One command sends the current note; edit it later and send again to update the s
 
 - **Sync current note** — command palette, ribbon icon, or right-click a file. Creates a note in ideashell the first time; later runs update that same note.
 - **Send selection as a new note** — select text, right-click → "Send selection to ideashell". Good for quick memos.
+- **Sync a folder / a selection** — right-click a folder in the file explorer → "Sync folder to ideashell"; select several files (Cmd/Ctrl-click) and right-click → "Sync N notes to ideashell".
 - **Sync all** — sends every note marked with `ideashell: true` in its frontmatter, plus everything under the folders you list in settings.
 - **Folder mapping** (on by default) — a note in `Reading/2026/` lands in an ideashell folder named `Reading/2026`. ideashell folders are flat, so the Obsidian path becomes the folder name.
 - **Tags** — frontmatter `tags` and inline `#tags` become ideashell tags. An `obsidian` tag is added so you can filter these notes in the app (configurable).

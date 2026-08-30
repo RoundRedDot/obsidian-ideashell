@@ -1,4 +1,4 @@
-import { Editor, MarkdownView, Menu, Notice, Plugin, TFile, debounce } from 'obsidian';
+import { Editor, MarkdownView, Menu, Notice, Plugin, TAbstractFile, TFile, TFolder, debounce } from 'obsidian';
 import { McpClient } from './mcp-client';
 import { IdeashellApi } from './ideashell-api';
 import { SyncService } from './sync';
@@ -66,14 +66,39 @@ export default class IdeashellPlugin extends Plugin {
 			callback: () => void this.syncAll(),
 		});
 
+		// Right-click on one file or one folder in the explorer.
 		this.registerEvent(
 			this.app.workspace.on('file-menu', (menu: Menu, file) => {
-				if (!(file instanceof TFile) || file.extension !== 'md') return;
+				if (file instanceof TFile && file.extension === 'md') {
+					menu.addItem((item) =>
+						item
+							.setTitle('Sync to ideashell')
+							.setIcon('shell')
+							.onClick(() => void this.sync.syncFile(file)),
+					);
+				} else if (file instanceof TFolder) {
+					const notes = markdownFilesIn(file);
+					if (notes.length === 0) return;
+					menu.addItem((item) =>
+						item
+							.setTitle(`Sync folder to ideashell (${notes.length} notes)`)
+							.setIcon('shell')
+							.onClick(() => void this.syncBatch(notes, file.name)),
+					);
+				}
+			}),
+		);
+
+		// Right-click with several files/folders selected in the explorer.
+		this.registerEvent(
+			this.app.workspace.on('files-menu', (menu: Menu, files: TAbstractFile[]) => {
+				const notes = dedupeFiles(files.flatMap((f) => (f instanceof TFolder ? markdownFilesIn(f) : f instanceof TFile && f.extension === 'md' ? [f] : [])));
+				if (notes.length === 0) return;
 				menu.addItem((item) =>
 					item
-						.setTitle('Sync to ideashell')
+						.setTitle(`Sync ${notes.length} notes to ideashell`)
 						.setIcon('shell')
-						.onClick(() => void this.sync.syncFile(file)),
+						.onClick(() => void this.syncBatch(notes, `${notes.length} notes`)),
 				);
 			}),
 		);
@@ -147,8 +172,14 @@ export default class IdeashellPlugin extends Plugin {
 			new Notice('ideashell: nothing to sync. Mark notes with `ideashell: true` or configure sync folders.');
 			return;
 		}
-		const notice = new Notice(`ideashell: syncing 0/${files.length}…`, 0);
-		const counts = await this.sync.syncMany(files, (done, total) => notice.setMessage(`ideashell: syncing ${done}/${total}…`));
+		await this.syncBatch(files, 'marked notes');
+	}
+
+	private async syncBatch(files: TFile[], label: string): Promise<void> {
+		const notice = new Notice(`ideashell: syncing ${label} 0/${files.length}…`, 0);
+		const counts = await this.sync.syncMany(files, (done, total) =>
+			notice.setMessage(`ideashell: syncing ${label} ${done}/${total}…`),
+		);
 		notice.hide();
 		new Notice(
 			`ideashell: ${counts.created} created, ${counts.updated} updated, ${counts.unchanged} unchanged, ${counts.failed} failed`,
@@ -189,4 +220,22 @@ export default class IdeashellPlugin extends Plugin {
 	async saveSettings(): Promise<void> {
 		await this.saveData(this.settings);
 	}
+}
+
+/** All markdown notes under a folder, recursively, in explorer order. */
+function markdownFilesIn(folder: TFolder): TFile[] {
+	const out: TFile[] = [];
+	const walk = (f: TFolder) => {
+		for (const child of f.children) {
+			if (child instanceof TFolder) walk(child);
+			else if (child instanceof TFile && child.extension === 'md') out.push(child);
+		}
+	};
+	walk(folder);
+	return out;
+}
+
+function dedupeFiles(files: TFile[]): TFile[] {
+	const seen = new Set<string>();
+	return files.filter((f) => (seen.has(f.path) ? false : (seen.add(f.path), true)));
 }
