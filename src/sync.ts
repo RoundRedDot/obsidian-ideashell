@@ -52,7 +52,17 @@ export class SyncService {
 
 		const existingId = meta?.frontmatter?.[FM_ID] as string | undefined;
 		const existingHash = meta?.frontmatter?.[FM_HASH] as string | undefined;
-		if (existingId && existingHash === note.hash && !opts.force) {
+
+		// Images already sent for this note (vault paths); only new embeds are uploaded on update.
+		const attachedBefore = new Set<string>(
+			existingId && Array.isArray(meta?.frontmatter?.[FM_IMAGES])
+				? (meta?.frontmatter?.[FM_IMAGES] as unknown[]).map(String)
+				: [],
+		);
+		const pendingImages = this.embeddedImages(file, attachedBefore);
+
+		// Text unchanged and no new images → nothing to send. (Images are not part of the text hash.)
+		if (existingId && existingHash === note.hash && pendingImages.length === 0 && !opts.force) {
 			if (!opts.silent) new Notice(`ideashell: "${file.basename}" is already up to date`);
 			return 'unchanged';
 		}
@@ -61,11 +71,7 @@ export class SyncService {
 			const folderName = s.mapFolders ? folderNameForPath(file.parent?.path ?? '') : null;
 			const folderId = folderName ? await this.folders.resolve(folderName) : undefined;
 
-			// Images already sent for this note (vault paths); only new embeds are uploaded on update.
-			const attachedBefore = new Set<string>(
-				Array.isArray(meta?.frontmatter?.[FM_IMAGES]) ? (meta?.frontmatter?.[FM_IMAGES] as unknown[]).map(String) : [],
-			);
-			const { images, paths, skipped } = await this.collectImages(file, existingId ? attachedBefore : new Set());
+			const { images, paths, skipped } = await this.readImages(pendingImages, attachedBefore.size);
 
 			let noteId = existingId;
 			let url: string | undefined;
@@ -110,24 +116,34 @@ export class SyncService {
 	}
 
 	/**
-	 * Local raster images embedded as `![[x.png]]`, read from the vault and base64-encoded.
-	 * `already` = vault paths sent in an earlier sync; they are neither re-read nor re-sent.
+	 * Local raster images embedded as `![[x.png]]` that have not been sent yet
+	 * (`already` = vault paths recorded in frontmatter by earlier syncs). Resolution goes through
+	 * Obsidian's link resolver, so `![[red.png]]` finds `img/red.png` the same way the editor does.
 	 * Removing an embed does not detach the image in ideashell (attachments are add-only).
 	 */
-	private async collectImages(
-		file: TFile,
-		already: Set<string>,
+	private embeddedImages(file: TFile, already: Set<string>): TFile[] {
+		const out: TFile[] = [];
+		const seen = new Set<string>(already);
+		const embeds = this.app.metadataCache.getFileCache(file)?.embeds ?? [];
+		for (const embed of embeds) {
+			const linkpath = embed.link.split('#')[0] ?? embed.link;
+			const target = this.app.metadataCache.getFirstLinkpathDest(linkpath, file.path);
+			if (!target || !IMAGE_EXTENSIONS.has(target.extension.toLowerCase()) || seen.has(target.path)) continue;
+			seen.add(target.path);
+			out.push(target);
+		}
+		return out;
+	}
+
+	private async readImages(
+		targets: TFile[],
+		alreadyCount: number,
 	): Promise<{ images: NoteImage[]; paths: string[]; skipped: string[] }> {
 		const images: NoteImage[] = [];
 		const paths: string[] = [];
 		const skipped: string[] = [];
-		const seen = new Set<string>(already);
-		const embeds = this.app.metadataCache.getFileCache(file)?.embeds ?? [];
-		for (const embed of embeds) {
-			const target = this.app.metadataCache.getFirstLinkpathDest(embed.link.split('#')[0] ?? embed.link, file.path);
-			if (!target || !IMAGE_EXTENSIONS.has(target.extension.toLowerCase()) || seen.has(target.path)) continue;
-			seen.add(target.path);
-			if (already.size + images.length >= IMAGES_MAX) {
+		for (const target of targets) {
+			if (alreadyCount + images.length >= IMAGES_MAX) {
 				skipped.push(`${target.name} (max ${IMAGES_MAX})`);
 				continue;
 			}
