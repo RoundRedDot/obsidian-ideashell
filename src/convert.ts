@@ -49,10 +49,12 @@ export function stripFrontmatter(raw: string, meta: CachedMetadata | null): stri
 	return raw.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n?/, '');
 }
 
-/** `[[Note|alias]]` → `alias`, `[[Note#Heading]]` → `Note`, `![[image.png]]` → `(image.png)`. */
+export const IMAGE_EXTENSIONS = new Set(['png', 'jpg', 'jpeg', 'gif', 'webp']);
+
+/** `[[Note|alias]]` → `alias`, `[[Note#Heading]]` → `Note`, `![[file.png]]` → `(file.png)`. */
 export function convertWikilinks(text: string): string {
 	return text
-		.replace(/!\[\[([^\]|#]+)(?:#[^\]|]*)?(?:\|[^\]]*)?\]\]/g, (_m, target: string) => `(${target.trim()})`)
+		.replace(/!\[\[([^\]|#]+)(?:#[^\]|]*)?(?:\|[^\]]*)?\]\]/g, (_m, target: string) => `(${basename(target.trim())})`)
 		.replace(/\[\[([^\]|#]+)(?:#([^\]|]*))?(?:\|([^\]]*))?\]\]/g, (_m, target: string, _h, alias?: string) =>
 			(alias ?? target).trim(),
 		);
@@ -94,6 +96,12 @@ export function folderNameForPath(folderPath: string): string | null {
 		name = candidate;
 	}
 	return truncate(name, FOLDER_NAME_MAX);
+}
+
+/** Last path segment of a vault path or link target. */
+export function basename(path: string): string {
+	const i = path.lastIndexOf('/');
+	return i >= 0 ? path.slice(i + 1) : path;
 }
 
 export function truncate(s: string, max: number): string {

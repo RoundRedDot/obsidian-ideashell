@@ -11,6 +11,12 @@ import { requestUrl, RequestUrlResponse } from 'obsidian';
  */
 
 const PROTOCOL_VERSION = '2025-06-18';
+const RATE_LIMIT_RETRIES = 3;
+const RATE_LIMIT_WAIT_MS = 20_000;
+
+function sleep(ms: number): Promise<void> {
+	return new Promise((r) => setTimeout(r, ms));
+}
 const HEADER_SESSION = 'mcp-session-id';
 
 export interface McpToolResult {
@@ -66,6 +72,11 @@ export class McpClient {
 			// Session gone (server restart / TTL). Re-initialize once.
 			this.sessionId = null;
 			await this.ensureSession();
+			res = await this.post(method, params);
+		}
+		// Rate limited (per-IP window of one minute): wait it out rather than failing a batch.
+		for (let attempt = 0; res.status === 429 && attempt < RATE_LIMIT_RETRIES; attempt++) {
+			await sleep(RATE_LIMIT_WAIT_MS);
 			res = await this.post(method, params);
 		}
 		return this.unwrap(res, method);

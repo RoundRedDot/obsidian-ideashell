@@ -1,6 +1,16 @@
-import { App, Notice, TFile } from 'obsidian';
-import { FolderResolver, IdeashellApi } from './ideashell-api';
-import { FM_HASH, FM_ID, FM_MARK, FM_SYNCED, FM_URL, convertNote, convertSelection, folderNameForPath } from './convert';
+import { App, Notice, TFile, arrayBufferToBase64 } from 'obsidian';
+import { FolderResolver, IdeashellApi, IMAGES_MAX, IMAGE_MAX_BYTES, NoteImage } from './ideashell-api';
+import {
+	FM_HASH,
+	FM_ID,
+	FM_MARK,
+	FM_SYNCED,
+	FM_URL,
+	IMAGE_EXTENSIONS,
+	convertNote,
+	convertSelection,
+	folderNameForPath,
+} from './convert';
 import type { IdeashellSettings } from './settings';
 import { errorMessage } from './settings';
 
@@ -57,14 +67,19 @@ export class SyncService {
 				// keep the ideashell folder in step with where the file lives now
 				if (folderId) await this.api.moveNotes([noteId], folderId);
 			} else {
+				const { images, skipped } = await this.collectImages(file);
 				const created = await this.api.createNote({
 					title: note.title,
 					content: note.content,
 					tags: note.tags,
 					folderId,
+					images,
 				});
 				noteId = created.note_id;
 				url = created.url;
+				if (skipped.length > 0 && !opts.silent) {
+					new Notice(`ideashell: ${skipped.length} image(s) not attached: ${skipped.join(', ')}`, 8000);
+				}
 			}
 
 			await this.app.fileManager.processFrontMatter(file, (fm) => {
@@ -84,6 +99,33 @@ export class SyncService {
 			console.error('[ideashell] sync failed', file.path, e);
 			return 'failed';
 		}
+	}
+
+	/**
+	 * Local raster images embedded as `![[x.png]]`, read from the vault and base64-encoded.
+	 * Only attached on first sync: note_update cannot change attachments yet.
+	 */
+	private async collectImages(file: TFile): Promise<{ images: NoteImage[]; skipped: string[] }> {
+		const images: NoteImage[] = [];
+		const skipped: string[] = [];
+		const seen = new Set<string>();
+		const embeds = this.app.metadataCache.getFileCache(file)?.embeds ?? [];
+		for (const embed of embeds) {
+			const target = this.app.metadataCache.getFirstLinkpathDest(embed.link.split('#')[0] ?? embed.link, file.path);
+			if (!target || !IMAGE_EXTENSIONS.has(target.extension.toLowerCase()) || seen.has(target.path)) continue;
+			seen.add(target.path);
+			if (images.length >= IMAGES_MAX) {
+				skipped.push(`${target.name} (max ${IMAGES_MAX})`);
+				continue;
+			}
+			if (target.stat.size > IMAGE_MAX_BYTES) {
+				skipped.push(`${target.name} (>10MB)`);
+				continue;
+			}
+			const bytes = await this.app.vault.readBinary(target);
+			images.push({ data: arrayBufferToBase64(bytes), name: target.name });
+		}
+		return { images, skipped };
 	}
 
 	/** Send selected text as a brand-new note (like a quick memo). Not tracked in frontmatter. */

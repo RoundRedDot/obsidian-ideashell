@@ -7,13 +7,23 @@ export const TAG_MAX = 32;
 export const FOLDER_NAME_MAX = 50;
 export const MOVE_NOTES_MAX = 50;
 
+export interface NoteImage {
+	/** base64 bytes */
+	data: string;
+	name: string;
+}
+
 export interface CreateNoteInput {
 	title: string;
 	content: string;
 	summary?: string;
 	tags?: string[];
 	folderId?: string;
+	images?: NoteImage[];
 }
+
+export const IMAGES_MAX = 9;
+export const IMAGE_MAX_BYTES = 10 * 1024 * 1024;
 
 /** Origin marker stored on every note this plugin creates. */
 export const SOURCE = 'obsidian';
@@ -46,6 +56,7 @@ export class IdeashellApi {
 			...(input.summary ? { summary: input.summary } : {}),
 			...(input.tags && input.tags.length > 0 ? { tags: input.tags } : {}),
 			...(input.folderId ? { folder_id: input.folderId } : {}),
+			...(input.images && input.images.length > 0 ? { images: input.images } : {}),
 			source: SOURCE,
 		});
 		const parsed = parseJson<CreatedNote>(text);
