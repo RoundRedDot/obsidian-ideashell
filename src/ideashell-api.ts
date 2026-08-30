@@ -33,6 +33,8 @@ export interface UpdateNoteInput {
 	content?: string;
 	summary?: string;
 	tags?: string[];
+	/** Images to add; the server keeps existing attachments and skips identical bytes. */
+	images?: NoteImage[];
 }
 
 export interface CreatedNote {
@@ -65,7 +67,12 @@ export class IdeashellApi {
 	}
 
 	async updateNote(noteId: string, input: UpdateNoteInput): Promise<void> {
-		await this.client().callTool('note_update', { note_id: noteId, ...input });
+		const { images, ...rest } = input;
+		await this.client().callTool('note_update', {
+			note_id: noteId,
+			...rest,
+			...(images && images.length > 0 ? { images } : {}),
+		});
 	}
 
 	async listFolders(): Promise<FolderInfo[]> {

@@ -3,6 +3,7 @@ import { FolderResolver, IdeashellApi, IMAGES_MAX, IMAGE_MAX_BYTES, NoteImage } 
 import {
 	FM_HASH,
 	FM_ID,
+	FM_IMAGES,
 	FM_MARK,
 	FM_SYNCED,
 	FM_URL,
@@ -60,14 +61,19 @@ export class SyncService {
 			const folderName = s.mapFolders ? folderNameForPath(file.parent?.path ?? '') : null;
 			const folderId = folderName ? await this.folders.resolve(folderName) : undefined;
 
+			// Images already sent for this note (vault paths); only new embeds are uploaded on update.
+			const attachedBefore = new Set<string>(
+				Array.isArray(meta?.frontmatter?.[FM_IMAGES]) ? (meta?.frontmatter?.[FM_IMAGES] as unknown[]).map(String) : [],
+			);
+			const { images, paths, skipped } = await this.collectImages(file, existingId ? attachedBefore : new Set());
+
 			let noteId = existingId;
 			let url: string | undefined;
 			if (noteId) {
-				await this.api.updateNote(noteId, { title: note.title, content: note.content, tags: note.tags });
+				await this.api.updateNote(noteId, { title: note.title, content: note.content, tags: note.tags, images });
 				// keep the ideashell folder in step with where the file lives now
 				if (folderId) await this.api.moveNotes([noteId], folderId);
 			} else {
-				const { images, skipped } = await this.collectImages(file);
 				const created = await this.api.createNote({
 					title: note.title,
 					content: note.content,
@@ -77,16 +83,18 @@ export class SyncService {
 				});
 				noteId = created.note_id;
 				url = created.url;
-				if (skipped.length > 0 && !opts.silent) {
-					new Notice(`ideashell: ${skipped.length} image(s) not attached: ${skipped.join(', ')}`, 8000);
-				}
+			}
+			if (skipped.length > 0 && !opts.silent) {
+				new Notice(`ideashell: ${skipped.length} image(s) not attached: ${skipped.join(', ')}`, 8000);
 			}
 
+			const attachedNow = [...attachedBefore, ...paths];
 			await this.app.fileManager.processFrontMatter(file, (fm) => {
 				fm[FM_ID] = noteId;
 				fm[FM_HASH] = note.hash;
 				fm[FM_SYNCED] = new Date().toISOString();
 				if (url) fm[FM_URL] = url;
+				if (attachedNow.length > 0) fm[FM_IMAGES] = attachedNow;
 			});
 
 			const outcome: SyncOutcome = existingId ? 'updated' : 'created';
@@ -103,18 +111,23 @@ export class SyncService {
 
 	/**
 	 * Local raster images embedded as `![[x.png]]`, read from the vault and base64-encoded.
-	 * Only attached on first sync: note_update cannot change attachments yet.
+	 * `already` = vault paths sent in an earlier sync; they are neither re-read nor re-sent.
+	 * Removing an embed does not detach the image in ideashell (attachments are add-only).
 	 */
-	private async collectImages(file: TFile): Promise<{ images: NoteImage[]; skipped: string[] }> {
+	private async collectImages(
+		file: TFile,
+		already: Set<string>,
+	): Promise<{ images: NoteImage[]; paths: string[]; skipped: string[] }> {
 		const images: NoteImage[] = [];
+		const paths: string[] = [];
 		const skipped: string[] = [];
-		const seen = new Set<string>();
+		const seen = new Set<string>(already);
 		const embeds = this.app.metadataCache.getFileCache(file)?.embeds ?? [];
 		for (const embed of embeds) {
 			const target = this.app.metadataCache.getFirstLinkpathDest(embed.link.split('#')[0] ?? embed.link, file.path);
 			if (!target || !IMAGE_EXTENSIONS.has(target.extension.toLowerCase()) || seen.has(target.path)) continue;
 			seen.add(target.path);
-			if (images.length >= IMAGES_MAX) {
+			if (already.size + images.length >= IMAGES_MAX) {
 				skipped.push(`${target.name} (max ${IMAGES_MAX})`);
 				continue;
 			}
@@ -124,8 +137,9 @@ export class SyncService {
 			}
 			const bytes = await this.app.vault.readBinary(target);
 			images.push({ data: arrayBufferToBase64(bytes), name: target.name });
+			paths.push(target.path);
 		}
-		return { images, skipped };
+		return { images, paths, skipped };
 	}
 
 	/** Send selected text as a brand-new note (like a quick memo). Not tracked in frontmatter. */

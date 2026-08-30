@@ -12,7 +12,7 @@ One command sends the current note; edit it later and send again to update the s
 - **Sync all** — sends every note marked with `ideashell: true` in its frontmatter, plus everything under the folders you list in settings.
 - **Folder mapping** (on by default) — a note in `Reading/2026/` lands in an ideashell folder named `Reading/2026`. ideashell folders are flat, so the Obsidian path becomes the folder name.
 - **Tags** — frontmatter `tags` and inline `#tags` become ideashell tags. An `obsidian` tag is added so you can filter these notes in the app (configurable).
-- **Images** — local images embedded as `![[photo.png]]` (PNG/JPEG/GIF/WebP, up to 9 per note, 10MB each) are uploaded and attached to the note on its first sync.
+- **Images** — local images embedded as `![[photo.png]]` (PNG/JPEG/GIF/WebP, up to 9 per note, 10MB each) are uploaded and attached to the note; images added later are attached on the next sync.
 - **Optional auto re-sync** — off by default. When on, a note that was synced before is re-sent a few seconds after you stop editing. New notes are never sent without you asking.
 
 Sync is **one-way**: Obsidian → ideashell. Changes made in the ideashell app do not flow back.
@@ -32,6 +32,7 @@ ideashell_id: "1234567890"      # ideashell note id — used to update instead o
 ideashell_hash: "3f2a9c1b"      # content hash — unchanged notes are skipped
 ideashell_synced: 2026-08-30T08:12:00.000Z
 ideashell_url: https://…        # link to the note in ideashell, when available
+ideashell_images: [img/a.png]   # vault images already attached, so they are not re-sent
 ```
 
 Remove `ideashell_id` if you want the next sync to create a fresh note.
@@ -47,7 +48,7 @@ An ideashell account is required. The access key grants the same permissions as 
 
 ## Limitations
 
-- Images are attached only when a note is first synced; adding or changing images later does not update the ideashell note yet. Non-image attachments (PDF, audio, …) are not uploaded; the embed becomes `(file.pdf)` in the text.
+- Image attachments are add-only: removing `![[photo.png]]` from the note does not remove the image in ideashell. Non-image attachments (PDF, audio, …) are not uploaded; the embed becomes `(file.pdf)` in the text.
 - Titles longer than 30 characters are truncated (ideashell limit); the full title is still in the file name on the Obsidian side.
 - `[[wikilinks]]` are converted to plain text (configurable), since ideashell cannot resolve vault links.
 - Deleting a note in Obsidian does not delete it in ideashell.
