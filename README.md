@@ -1,7 +1,3 @@
-<p align="center">
-  <img src="assets/banner.svg" alt="Obsidian → ideashell" width="760">
-</p>
-
 # ideashell for Obsidian
 
 Send notes from [Obsidian](https://obsidian.md) to [ideashell (闪念贝壳)](https://ideashell.site) — text, tags, folders and images.
