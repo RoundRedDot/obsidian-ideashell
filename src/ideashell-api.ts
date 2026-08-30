@@ -63,6 +63,8 @@ export class IdeashellApi {
 			// strip trailing flags and tags appended by the server formatter
 			name = name.replace(/\s\((pinned|archived)(, (pinned|archived))?\)$/, '');
 			name = name.replace(/(\s#[^\s#]+)+$/, '');
+			// the server prefixes the folder emoji (default 📁) to the name
+			name = name.replace(/^[\p{Extended_Pictographic}\p{Emoji_Component}️‍\s]+/u, '');
 			folders.push({ folder_id: (m[2] ?? '').trim(), name: name.trim() });
 		}
 		return folders;
