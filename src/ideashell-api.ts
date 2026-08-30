@@ -11,8 +11,12 @@ export interface CreateNoteInput {
 	title: string;
 	content: string;
 	summary?: string;
-	tag?: string;
+	tags?: string[];
+	folderId?: string;
 }
+
+/** Origin marker stored on every note this plugin creates. */
+export const SOURCE = 'obsidian';
 
 export interface UpdateNoteInput {
 	title?: string;
@@ -40,7 +44,9 @@ export class IdeashellApi {
 			title: input.title,
 			content: input.content,
 			...(input.summary ? { summary: input.summary } : {}),
-			...(input.tag ? { tag: input.tag } : {}),
+			...(input.tags && input.tags.length > 0 ? { tags: input.tags } : {}),
+			...(input.folderId ? { folder_id: input.folderId } : {}),
+			source: SOURCE,
 		});
 		const parsed = parseJson<CreatedNote>(text);
 		if (!parsed?.note_id) throw new McpError(`note_create returned no note_id: ${text.slice(0, 200)}`);

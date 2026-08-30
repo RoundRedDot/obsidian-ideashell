@@ -47,28 +47,24 @@ export class SyncService {
 		}
 
 		try {
+			const folderName = s.mapFolders ? folderNameForPath(file.parent?.path ?? '') : null;
+			const folderId = folderName ? await this.folders.resolve(folderName) : undefined;
+
 			let noteId = existingId;
 			let url: string | undefined;
 			if (noteId) {
 				await this.api.updateNote(noteId, { title: note.title, content: note.content, tags: note.tags });
+				// keep the ideashell folder in step with where the file lives now
+				if (folderId) await this.api.moveNotes([noteId], folderId);
 			} else {
 				const created = await this.api.createNote({
 					title: note.title,
 					content: note.content,
-					tag: note.tags[0],
+					tags: note.tags,
+					folderId,
 				});
 				noteId = created.note_id;
 				url = created.url;
-				// note_create only takes one tag; push the full list right away if there are more.
-				if (note.tags.length > 1) await this.api.updateNote(noteId, { tags: note.tags });
-			}
-
-			if (s.mapFolders) {
-				const folderName = folderNameForPath(file.parent?.path ?? '');
-				if (folderName) {
-					const folderId = await this.folders.resolve(folderName);
-					await this.api.moveNotes([noteId], folderId);
-				}
 			}
 
 			await this.app.fileManager.processFrontMatter(file, (fm) => {
@@ -95,11 +91,9 @@ export class SyncService {
 		const s = this.settings();
 		const { title, content } = convertSelection(selection, { stripWikilinks: s.stripWikilinks, sourceTag: s.sourceTag });
 		try {
-			const created = await this.api.createNote({ title, content, tag: s.sourceTag || undefined });
-			if (s.mapFolders && sourceFile) {
-				const folderName = folderNameForPath(sourceFile.parent?.path ?? '');
-				if (folderName) await this.api.moveNotes([created.note_id], await this.folders.resolve(folderName));
-			}
+			const folderName = s.mapFolders && sourceFile ? folderNameForPath(sourceFile.parent?.path ?? '') : null;
+			const folderId = folderName ? await this.folders.resolve(folderName) : undefined;
+			await this.api.createNote({ title, content, tags: s.sourceTag ? [s.sourceTag] : undefined, folderId });
 			new Notice(`ideashell: selection sent as "${title}"`);
 		} catch (e) {
 			this.folders.invalidate();
