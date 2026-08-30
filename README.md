@@ -4,6 +4,8 @@
 
 # ideashell for Obsidian
 
+English | [简体中文](README.zh-CN.md)
+
 Send notes from [Obsidian](https://obsidian.md) to [ideashell (闪念贝壳)](https://ideashell.site) — text, tags, folders and images.
 Sync once to create the note; sync again after editing to update the same note. Nothing is duplicated.
 
