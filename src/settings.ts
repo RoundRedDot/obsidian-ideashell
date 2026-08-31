@@ -71,10 +71,10 @@ export class IdeashellSettingTab extends PluginSettingTab {
 
 		if (s.region === 'custom') {
 			new Setting(containerEl)
-				.setName('Custom MCP endpoint')
-				.setDesc('Full URL of the ideashell MCP endpoint, e.g. https://example.com/ideashell/mcp')
+				.setName('Custom endpoint')
+				.setDesc('Full URL of your ideashell endpoint.')
 				.addText((t) =>
-					t.setPlaceholder('https://…/ideashell/mcp').setValue(s.customEndpoint).onChange(async (v) => {
+					t.setPlaceholder('Endpoint URL').setValue(s.customEndpoint).onChange(async (v) => {
 						s.customEndpoint = v;
 						await this.plugin.saveSettings();
 					}),
@@ -82,11 +82,11 @@ export class IdeashellSettingTab extends PluginSettingTab {
 		}
 
 		new Setting(containerEl)
-			.setName('API Key')
-			.setDesc('Your ideashell API Key (MCP access key). Find it in ideashell → Settings → MCP.')
+			.setName('API key')
+			.setDesc('Your ideashell API key. Copy it from the ideashell app settings; it is the same key used for other AI clients.')
 			.addText((t) => {
 				t.inputEl.type = 'password';
-				t.inputEl.style.width = '100%';
+				t.inputEl.addClass('ideashell-wide-input');
 				t.setPlaceholder('32-character key').setValue(s.accessKey).onChange(async (v) => {
 					s.accessKey = v.trim();
 					this.plugin.resetClient();
@@ -96,15 +96,15 @@ export class IdeashellSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName('Test connection')
-			.setDesc('Verify the endpoint and API Key.')
+			.setDesc('Verify the endpoint and API key.')
 			.addButton((b) =>
 				b.setButtonText('Test').onClick(async () => {
 					b.setDisabled(true);
 					try {
 						await this.plugin.api.listFolders();
-						new Notice('ideashell: connection OK');
+						new Notice('Connected to ideashell');
 					} catch (e) {
-						new Notice(`ideashell: ${errorMessage(e)}`, 8000);
+						new Notice(`Connection failed: ${errorMessage(e)}`, 8000);
 					} finally {
 						b.setDisabled(false);
 					}
@@ -126,7 +126,7 @@ export class IdeashellSettingTab extends PluginSettingTab {
 		new Setting(containerEl)
 			.setName('Map folders')
 			.setDesc(
-				"Put each note into an ideashell folder named after its Obsidian folder path (e.g. 'Reading/2026'). Notes in the vault root stay unfiled.",
+				'Put each note into an ideashell folder named after its Obsidian folder path. Notes in the vault root stay unfiled.',
 			)
 			.addToggle((t) =>
 				t.setValue(s.mapFolders).onChange(async (v) => {
@@ -142,8 +142,8 @@ export class IdeashellSettingTab extends PluginSettingTab {
 			)
 			.addTextArea((t) => {
 				t.inputEl.rows = 4;
-				t.inputEl.style.width = '100%';
-				t.setPlaceholder('Reading\nProjects/Active').setValue(s.syncFolders.join('\n')).onChange(async (v) => {
+				t.inputEl.addClass('ideashell-wide-input');
+				t.setPlaceholder('One folder path per line').setValue(s.syncFolders.join('\n')).onChange(async (v) => {
 					s.syncFolders = v
 						.split('\n')
 						.map((x) => x.trim().replace(/^\/+|\/+$/g, ''))
@@ -171,7 +171,6 @@ export class IdeashellSettingTab extends PluginSettingTab {
 				sl
 					.setLimits(3, 120, 1)
 					.setValue(s.autoSyncDelay)
-					.setDynamicTooltip()
 					.onChange(async (v) => {
 						s.autoSyncDelay = v;
 						await this.plugin.saveSettings();
@@ -180,7 +179,7 @@ export class IdeashellSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName('Convert wikilinks to text')
-			.setDesc('Turn [[Note|alias]] into plain "alias" since ideashell cannot resolve vault links.')
+			.setDesc('Replace wikilinks with their display text, since ideashell cannot resolve vault links.')
 			.addToggle((t) =>
 				t.setValue(s.stripWikilinks).onChange(async (v) => {
 					s.stripWikilinks = v;

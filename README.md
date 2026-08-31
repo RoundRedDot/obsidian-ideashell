@@ -34,7 +34,7 @@ Sync is **one-way**: Obsidian → ideashell. Edits made in the ideashell app do 
 ## Usage
 
 ### Sync one note
-Open the note and run **Sync current note to ideashell** (`Cmd/Ctrl+P`), click the shell icon in the ribbon, or right-click the file. The first run creates the note; later runs update it. If nothing changed you get *already up to date* and no request is made.
+Open the note and run **Sync current note** (`Cmd/Ctrl+P`), click the shell icon in the ribbon, or right-click the file. The first run creates the note; later runs update it. If nothing changed you get *already up to date* and no request is made.
 
 ### Sync a folder or several files
 Right-click a folder → **Sync folder to ideashell (N notes)**. Or select multiple files with Cmd/Ctrl-click and right-click → **Sync N notes to ideashell**. Progress is shown in a notice; the summary reads `created / updated / unchanged / failed`. Safe to repeat — unchanged notes are skipped.
@@ -43,7 +43,7 @@ Right-click a folder → **Sync folder to ideashell (N notes)**. Or select multi
 Select text → right-click → **Send selection to ideashell**. The first line becomes the title. This creates a new note every time and is not tracked in frontmatter.
 
 ### Keep a set of notes in sync
-- Run **Mark current note for ideashell sync** to add `ideashell: true` to a note, and/or list folder paths under *Folders to sync* in settings.
+- Run **Mark current note for sync** to add `ideashell: true` to a note, and/or list folder paths under *Folders to sync* in settings.
 - **Sync all marked notes and sync folders** sends all of them.
 - Turn on **Auto-sync synced notes** if you want already-synced notes to be re-sent automatically after edits (debounced; delay configurable).
 

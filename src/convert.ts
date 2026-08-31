@@ -13,6 +13,11 @@ export interface ConvertedNote {
 	hash: string;
 }
 
+/** Frontmatter as an untyped record (the Obsidian type is `any`). */
+export function frontmatterOf(meta: CachedMetadata | null | undefined): Record<string, unknown> {
+	return meta?.frontmatter ?? {};
+}
+
 /** Frontmatter keys the plugin owns. */
 export const FM_ID = 'ideashell_id';
 export const FM_SYNCED = 'ideashell_synced';
@@ -27,8 +32,9 @@ export const FM_FOLDER = 'ideashell_folder';
 /** Turn a vault note into the fields ideashell's note_create / note_update accept. */
 export function convertNote(file: TFile, raw: string, meta: CachedMetadata | null, opts: ConvertOptions): ConvertedNote {
 	const body = stripFrontmatter(raw, meta);
-	const fmTitle = meta?.frontmatter?.title;
-	const title = truncate(String(fmTitle ?? file.basename).trim() || file.basename, TITLE_MAX);
+	const fmTitle = frontmatterOf(meta).title;
+	const rawTitle = typeof fmTitle === 'string' && fmTitle.trim() ? fmTitle.trim() : file.basename;
+	const title = truncate(rawTitle, TITLE_MAX);
 
 	let content = body.trim();
 	if (opts.stripWikilinks) content = convertWikilinks(content);
@@ -75,7 +81,8 @@ export function collectTags(meta: CachedMetadata | null, sourceTag: string): str
 		if (!out.some((x) => x.toLowerCase() === v.toLowerCase())) out.push(v);
 	};
 	if (sourceTag) push(sourceTag);
-	const fm = meta?.frontmatter?.tags ?? meta?.frontmatter?.tag;
+	const fmAll = frontmatterOf(meta);
+	const fm = fmAll.tags ?? fmAll.tag;
 	if (Array.isArray(fm)) fm.forEach(push);
 	else if (typeof fm === 'string') fm.split(/[,\s]+/).forEach(push);
 	meta?.tags?.forEach((t) => push(t.tag));

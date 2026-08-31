@@ -68,7 +68,7 @@ export class SyncService {
 		// Text unchanged, no new images, same folder → nothing to send.
 		// (Images and folder are not part of the text hash, so they are checked separately.)
 		if (existingId && existingHash === note.hash && pendingImages.length === 0 && !folderChanged && !opts.force) {
-			if (!opts.silent) new Notice(`ideashell: "${file.basename}" is already up to date`);
+			if (!opts.silent) new Notice(`"${file.basename}" is already up to date`);
 			return 'unchanged';
 		}
 
@@ -101,11 +101,11 @@ export class SyncService {
 				url = created.url;
 			}
 			if (skipped.length > 0 && !opts.silent) {
-				new Notice(`ideashell: ${skipped.length} image(s) not attached: ${skipped.join(', ')}`, 8000);
+				new Notice(`${skipped.length} image(s) not attached: ${skipped.join(', ')}`, 8000);
 			}
 
 			const attachedNow = [...attachedBefore, ...paths];
-			await this.app.fileManager.processFrontMatter(file, (fm) => {
+			await this.app.fileManager.processFrontMatter(file, (fm: Record<string, unknown>) => {
 				fm[FM_ID] = noteId;
 				fm[FM_HASH] = note.hash;
 				fm[FM_SYNCED] = new Date().toISOString();
@@ -116,12 +116,12 @@ export class SyncService {
 			});
 
 			const outcome: SyncOutcome = existingId ? 'updated' : 'created';
-			if (!opts.silent) new Notice(`ideashell: "${file.basename}" ${outcome}`);
+			if (!opts.silent) new Notice(`"${file.basename}" ${outcome} in ideashell`);
 			return outcome;
 		} catch (e) {
 			// folder cache may be stale (folder deleted in app) → refresh for next attempt
 			this.folders.invalidate();
-			if (!opts.silent) new Notice(`ideashell: failed to sync "${file.basename}": ${errorMessage(e)}`, 8000);
+			if (!opts.silent) new Notice(`Failed to sync "${file.basename}": ${errorMessage(e)}`, 8000);
 			console.error('[ideashell] sync failed', file.path, e);
 			return 'failed';
 		}
@@ -178,10 +178,10 @@ export class SyncService {
 			const folderName = s.mapFolders && sourceFile ? folderNameForPath(sourceFile.parent?.path ?? '') : null;
 			const folderId = folderName ? await this.folders.resolve(folderName) : undefined;
 			await this.api.createNote({ title, content, tags: s.sourceTag ? [s.sourceTag] : undefined, folderId });
-			new Notice(`ideashell: selection sent as "${title}"`);
+			new Notice(`Selection sent to ideashell as "${title}"`);
 		} catch (e) {
 			this.folders.invalidate();
-			new Notice(`ideashell: failed to send selection: ${errorMessage(e)}`, 8000);
+			new Notice(`Failed to send selection: ${errorMessage(e)}`, 8000);
 			console.error('[ideashell] selection sync failed', e);
 		}
 	}
@@ -216,5 +216,5 @@ export class SyncService {
 }
 
 function sleep(ms: number): Promise<void> {
-	return new Promise((r) => setTimeout(r, ms));
+	return new Promise((r) => window.setTimeout(r, ms));
 }

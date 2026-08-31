@@ -11,7 +11,7 @@ export default class IdeashellPlugin extends Plugin {
 	private client: McpClient | null = null;
 	private sync!: SyncService;
 	private statusEl: HTMLElement | null = null;
-	private pendingAuto = new Map<string, ReturnType<typeof setTimeout>>();
+	private pendingAuto = new Map<string, number>();
 
 	async onload(): Promise<void> {
 		await this.loadSettings();
@@ -24,7 +24,7 @@ export default class IdeashellPlugin extends Plugin {
 
 		this.addCommand({
 			id: 'sync-current-note',
-			name: 'Sync current note to ideashell',
+			name: 'Sync current note',
 			checkCallback: (checking) => {
 				const file = this.app.workspace.getActiveFile();
 				if (!file || file.extension !== 'md') return false;
@@ -35,7 +35,7 @@ export default class IdeashellPlugin extends Plugin {
 
 		this.addCommand({
 			id: 'send-selection',
-			name: 'Send selection to ideashell as a new note',
+			name: 'Send selection as a new note',
 			editorCheckCallback: (checking, editor: Editor, view) => {
 				const sel = editor.getSelection();
 				if (!sel.trim()) return false;
@@ -46,15 +46,15 @@ export default class IdeashellPlugin extends Plugin {
 
 		this.addCommand({
 			id: 'mark-current-note',
-			name: 'Mark current note for ideashell sync (ideashell: true)',
+			name: 'Mark current note for sync',
 			checkCallback: (checking) => {
 				const file = this.app.workspace.getActiveFile();
 				if (!file || file.extension !== 'md') return false;
 				if (!checking) {
-					void this.app.fileManager.processFrontMatter(file, (fm) => {
+					void this.app.fileManager.processFrontMatter(file, (fm: Record<string, unknown>) => {
 						fm[FM_MARK] = true;
 					});
-					new Notice(`ideashell: "${file.basename}" marked for sync`);
+					new Notice(`Marked "${file.basename}" for ideashell sync`);
 				}
 				return true;
 			},
@@ -62,7 +62,7 @@ export default class IdeashellPlugin extends Plugin {
 
 		this.addCommand({
 			id: 'sync-all',
-			name: 'Sync all marked notes and sync folders to ideashell',
+			name: 'Sync all marked notes and sync folders',
 			callback: () => void this.syncAll(),
 		});
 
@@ -135,7 +135,7 @@ export default class IdeashellPlugin extends Plugin {
 	}
 
 	onunload(): void {
-		for (const t of this.pendingAuto.values()) clearTimeout(t);
+		for (const t of this.pendingAuto.values()) window.clearTimeout(t);
 		this.pendingAuto.clear();
 	}
 
@@ -157,7 +157,7 @@ export default class IdeashellPlugin extends Plugin {
 		const view = this.app.workspace.getActiveViewOfType(MarkdownView);
 		const file = this.app.workspace.getActiveFile();
 		if (!file || file.extension !== 'md') {
-			new Notice('ideashell: open a markdown note first');
+			new Notice('Open a Markdown note first');
 			return;
 		}
 		// flush unsaved editor content so we read what the user sees
@@ -169,20 +169,20 @@ export default class IdeashellPlugin extends Plugin {
 	private async syncAll(): Promise<void> {
 		const files = this.sync.collectSyncTargets();
 		if (files.length === 0) {
-			new Notice('ideashell: nothing to sync. Mark notes with `ideashell: true` or configure sync folders.');
+			new Notice('Nothing to sync. Mark notes with `ideashell: true` or configure sync folders.');
 			return;
 		}
 		await this.syncBatch(files, 'marked notes');
 	}
 
 	private async syncBatch(files: TFile[], label: string): Promise<void> {
-		const notice = new Notice(`ideashell: syncing ${label} 0/${files.length}…`, 0);
+		const notice = new Notice(`Syncing ${label} 0/${files.length}…`, 0);
 		const counts = await this.sync.syncMany(files, (done, total) =>
-			notice.setMessage(`ideashell: syncing ${label} ${done}/${total}…`),
+			notice.setMessage(`Syncing ${label} ${done}/${total}…`),
 		);
 		notice.hide();
 		new Notice(
-			`ideashell: ${counts.created} created, ${counts.updated} updated, ${counts.unchanged} unchanged, ${counts.failed} failed`,
+			`Synced: ${counts.created} created, ${counts.updated} updated, ${counts.unchanged} unchanged, ${counts.failed} failed`,
 			8000,
 		);
 		this.refreshStatus();
@@ -190,13 +190,13 @@ export default class IdeashellPlugin extends Plugin {
 
 	private scheduleAutoSync(file: TFile): void {
 		const prev = this.pendingAuto.get(file.path);
-		if (prev) clearTimeout(prev);
+		if (prev) window.clearTimeout(prev);
 		this.pendingAuto.set(
 			file.path,
-			setTimeout(() => {
+			window.setTimeout(() => {
 				this.pendingAuto.delete(file.path);
 				void this.sync.syncFile(file, { silent: true }).then((r) => {
-					if (r === 'updated') new Notice(`ideashell: "${file.basename}" updated`, 2000);
+					if (r === 'updated') new Notice(`Updated "${file.basename}" in ideashell`, 2000);
 					this.refreshStatus();
 				});
 			}, this.settings.autoSyncDelay * 1000),

@@ -34,7 +34,7 @@
 ## 使用方法
 
 ### 同步一篇笔记
-打开笔记，`Cmd/Ctrl+P` 执行 **Sync current note to ideashell**，或点左侧栏的贝壳图标，或在文件列表里右键该文件。第一次执行是新建，之后执行是更新。内容没变会提示 *already up to date*，不发请求。
+打开笔记，`Cmd/Ctrl+P` 执行 **Sync current note**，或点左侧栏的贝壳图标，或在文件列表里右键该文件。第一次执行是新建，之后执行是更新。内容没变会提示 *already up to date*，不发请求。
 
 ### 同步一个文件夹或多个文件
 右键文件夹 → **Sync folder to ideashell (N notes)**；或按住 Cmd/Ctrl 多选文件后右键 → **Sync N notes to ideashell**。过程中有进度提示，结束后汇总 `created / updated / unchanged / failed`。可以反复执行，没变化的笔记会被跳过。
@@ -43,7 +43,7 @@
 选中文字 → 右键 → **Send selection to ideashell**。第一行作为标题。每次都会新建一条，不会记录到 frontmatter。
 
 ### 长期保持一批笔记同步
-- 用 **Mark current note for ideashell sync** 给笔记加上 `ideashell: true`，和/或在设置的 *Folders to sync* 里填文件夹路径。
+- 用 **Mark current note for sync** 给笔记加上 `ideashell: true`，和/或在设置的 *Folders to sync* 里填文件夹路径。
 - **Sync all marked notes and sync folders** 一次把它们全部发出去。
 - 想让已同步的笔记改完自动更新，打开 **Auto-sync synced notes**（有防抖，延迟可调）。
 

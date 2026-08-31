@@ -15,7 +15,7 @@ const RATE_LIMIT_RETRIES = 3;
 const RATE_LIMIT_WAIT_MS = 20_000;
 
 function sleep(ms: number): Promise<void> {
-	return new Promise((r) => setTimeout(r, ms));
+	return new Promise((r) => window.setTimeout(r, ms));
 }
 const HEADER_SESSION = 'mcp-session-id';
 
