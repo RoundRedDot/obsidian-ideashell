@@ -1,8 +1,26 @@
 # Community plugin submission (internal notes)
 
-Target: PR to https://github.com/obsidianmd/obsidian-releases editing `community-plugins.json`.
+Since May 2026 Obsidian no longer accepts pull requests to `obsidianmd/obsidian-releases`
+(`pull_request_creation_policy: collaborators_only`). Plugins are submitted through the
+developer dashboard on the Community site and reviewed automatically within minutes;
+approved plugins appear in-app within ~24 hours.
 
-## Entry to append (end of the array)
+Docs: https://docs.obsidian.md/Plugins/Releasing/Submit+your+plugin
+Announcement: https://obsidian.md/blog/future-of-plugins/
+
+## Steps
+
+1. Make sure the latest GitHub Release (tag == `manifest.json` version, no `v` prefix)
+   contains `main.js`, `manifest.json`, `styles.css`. The release workflow does this on tag push.
+2. Go to https://community.obsidian.md and sign in with an **Obsidian account**
+   (the account used for Obsidian Sync/Publish; create one if needed).
+3. Link the GitHub account that owns or administers `RoundRedDot/obsidian-ideashell`
+   (profile → connected accounts).
+4. Developer dashboard → add plugin → pick the repository `RoundRedDot/obsidian-ideashell`.
+   The dashboard reads `manifest.json` for id / name / author / description; nothing to type.
+5. Fix anything the automated review flags, push a new release, re-run.
+
+## Manifest values the dashboard will read
 
 ```json
 {
@@ -14,47 +32,15 @@ Target: PR to https://github.com/obsidianmd/obsidian-releases editing `community
 }
 ```
 
-`id`, `name`, `author`, `description` must match `manifest.json` exactly.
+## Disclosures to declare (when the dashboard asks)
 
-## PR title
-
-```
-Add plugin: ideashell
-```
-
-## PR body (the template checklist — tick everything)
-
-```
-# I am submitting a new Community Plugin
-
-## Repo URL
-
-Link to my plugin: https://github.com/RoundRedDot/obsidian-ideashell
-
-## Release Checklist
-- [x] I have tested the plugin on
-  - [x]  Windows
-  - [x]  macOS
-  - [x]  Linux
-  - [ ]  Android _(if applicable)_
-  - [ ]  iOS _(if applicable)_
-- [x] My GitHub release contains all required files
-  - [x] `main.js`
-  - [x] `manifest.json`
-  - [x] `styles.css` _(optional)_
-- [x] GitHub release name matches the exact version number specified in my manifest.json (_**Note:** Use the exact version number, don't include a prefix `v`_)
-- [x] The `id` in my `manifest.json` matches the `id` in the `community-plugins.json` file.
-- [x] My README.md describes the plugin's purpose and provides clear usage instructions.
-- [x] I have read the developer policies at https://docs.obsidian.md/Developer+policies, and have assessed my plugins's adherence to these policies.
-- [x] I have read the tips in https://docs.obsidian.md/Plugins/Releasing/Plugin+guidelines and have self-reviewed my plugin to avoid these common pitfalls.
-- [x] I have added a license in the LICENSE file.
-- [x] My project respects and is compatible with the original license of any code from other plugins that I'm using.
-  I have given proper attribution to these other projects in my `README.md`.
-
-## Disclosures
-- Network use: the plugin sends the notes the user chooses to sync to the ideashell MCP endpoint selected in settings (api.ideashell.cn / api.ideashell.com or a custom URL). Documented in README "What is sent, and where".
-- Account required: an ideashell account and its API Key are needed. Documented in README.
+- Network: sends the notes the user chooses to sync to the ideashell MCP endpoint selected in
+  settings (api.ideashell.cn / api.ideashell.com or a custom URL). Documented in README
+  "What is sent, and where".
+- Account required: an ideashell account and its API Key.
 - No telemetry, no ads, no remote code.
-```
 
-Note: tick Windows/Linux only if actually tested there; otherwise untick and say so — the reviewers accept macOS-only testing for a first release.
+## Leftover from the old PR route
+
+A fork `rayzzz-rdd/obsidian-releases` with branch `add-ideashell` was created on 2026-08-31
+before discovering PRs are closed. It is unused and can be deleted.
