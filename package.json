@@ -1,6 +1,6 @@
 {
 	"name": "obsidian-ideashell",
-	"version": "0.1.1",
+	"version": "0.1.2",
 	"description": "Send notes from Obsidian to ideashell (闪念贝壳)",
 	"main": "main.js",
 	"type": "module",

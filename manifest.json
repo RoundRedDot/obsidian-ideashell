@@ -1,7 +1,7 @@
 {
 	"id": "ideashell",
 	"name": "ideashell",
-	"version": "0.1.1",
+	"version": "0.1.2",
 	"minAppVersion": "1.5.0",
 	"description": "Send notes to ideashell (闪念贝壳): text, tags, folders and images. Sync again to update the same note instead of duplicating it.",
 	"author": "ideashell",
