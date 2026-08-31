@@ -3,7 +3,7 @@
 	"name": "ideashell",
 	"version": "0.1.0",
 	"minAppVersion": "1.4.0",
-	"description": "Send notes from Obsidian to ideashell (闪念贝壳). 将 Obsidian 笔记一键同步到闪念贝壳。",
+	"description": "Send notes to ideashell (闪念贝壳): text, tags, folders and images. Sync again to update the same note instead of duplicating it.",
 	"author": "ideashell",
 	"authorUrl": "https://ideashell.site",
 	"isDesktopOnly": false

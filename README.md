@@ -9,8 +9,6 @@ English | [简体中文](README.zh-CN.md)
 Send notes from [Obsidian](https://obsidian.md) to [ideashell (闪念贝壳)](https://ideashell.site) — text, tags, folders and images.
 Sync once to create the note; sync again after editing to update the same note. Nothing is duplicated.
 
-把 Obsidian 笔记同步到闪念贝壳：正文、标签、文件夹、图片一起过去。第一次同步新建，之后同步原地更新，不会重复。
-
 ## Features
 
 | | |
