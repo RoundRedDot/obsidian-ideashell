@@ -181,9 +181,10 @@ export default class IdeashellPlugin extends Plugin {
 			notice.setMessage(`Syncing ${label} ${done}/${total}…`),
 		);
 		notice.hide();
+		const reason = counts.failed > 0 && this.sync.lastError ? ` — ${this.sync.lastError}` : '';
 		new Notice(
-			`Synced: ${counts.created} created, ${counts.updated} updated, ${counts.unchanged} unchanged, ${counts.failed} failed`,
-			8000,
+			`Synced: ${counts.created} created, ${counts.updated} updated, ${counts.unchanged} unchanged, ${counts.failed} failed${reason}`,
+			counts.failed > 0 ? 12000 : 8000,
 		);
 		this.refreshStatus();
 	}

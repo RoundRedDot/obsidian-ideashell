@@ -21,6 +21,8 @@ export type SyncOutcome = 'created' | 'updated' | 'unchanged' | 'failed';
 export class SyncService {
 	private folders: FolderResolver;
 	private inFlight = new Set<string>();
+	/** Message of the most recent failure, surfaced in batch summaries. */
+	lastError: string | null = null;
 
 	constructor(
 		private app: App,
@@ -121,6 +123,7 @@ export class SyncService {
 		} catch (e) {
 			// folder cache may be stale (folder deleted in app) → refresh for next attempt
 			this.folders.invalidate();
+			this.lastError = errorMessage(e);
 			if (!opts.silent) new Notice(`Failed to sync "${file.basename}": ${errorMessage(e)}`, 8000);
 			console.error('[ideashell] sync failed', file.path, e);
 			return 'failed';
